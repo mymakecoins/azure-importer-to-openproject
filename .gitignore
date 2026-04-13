@@ -1,0 +1,40 @@
+# Dependências
+node_modules/
+
+# Ambiente e segredos (use apenas .env.example no repositório)
+.env
+.env.*.local
+
+# Build e caches
+frontend/dist/
+*.tsbuildinfo
+.vite/
+
+# Logs e depuração
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# SO e editores
+.DS_Store
+Thumbs.db
+*~
+.idea/
+*.swp
+*.swo
+
+# Testes / cobertura
+coverage/
+.nyc_output/
+
+# Artefatos temporários
+tmp/
+temp/
+
+# Artefatos de documentação
+_docs/
+
+#Artefatos da IDE   
+.cursor/
