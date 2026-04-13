@@ -1,0 +1,19 @@
+# Linux: use quando o OpenProject no host só escuta em 127.0.0.1 (ECONNREFUSED via host.docker.internal).
+# O backend passa a usar a rede do host e alcança localhost:8080; o Postgres continua em 127.0.0.1:5433.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.host.yml up --build
+#
+# Não suportado no Docker Desktop Mac/Windows da mesma forma que no Linux.
+services:
+  backend:
+    network_mode: host
+    environment:
+      DATABASE_URL: postgres://importer:importer@127.0.0.1:5433/importer
+      BACKEND_NETWORK_MODE: host
+      OPENPROJECT_BASE_URL: ${OPENPROJECT_BASE_URL:-http://localhost:8080}
+
+  frontend:
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - ./frontend/nginx.host.conf:/etc/nginx/conf.d/default.conf:ro

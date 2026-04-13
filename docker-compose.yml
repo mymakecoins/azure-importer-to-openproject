@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: importer
+      POSTGRES_PASSWORD: importer
+      POSTGRES_DB: importer
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U importer -d importer"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    # Linux: host.docker.internal não existe por padrão; host-gateway aponta para a máquina host
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 25s
+    environment:
+      DATABASE_URL: postgres://importer:importer@db:5432/importer
+      OPENPROJECT_BASE_URL: ${OPENPROJECT_BASE_URL:-http://host.docker.internal:8080}
+      OPENPROJECT_API_KEY: ${OPENPROJECT_API_KEY:-}
+      OPENPROJECT_AUTH_MODE: ${OPENPROJECT_AUTH_MODE:-basic}
+      OPENPROJECT_PROJECT_IDENTIFIER: ${OPENPROJECT_PROJECT_IDENTIFIER:-sa-cavalcante-fase-3}
+      OPENPROJECT_DEFAULT_TYPE_ID: ${OPENPROJECT_DEFAULT_TYPE_ID:-1}
+      OPENPROJECT_TYPE_MAP_JSON: ${OPENPROJECT_TYPE_MAP_JSON:-{}}
+      CSV_COLUMN_ID: ${CSV_COLUMN_ID:-ID}
+      CSV_COLUMN_TITLE: ${CSV_COLUMN_TITLE:-Title}
+      CSV_COLUMN_WORK_ITEM_TYPE: ${CSV_COLUMN_WORK_ITEM_TYPE:-Work Item Type}
+      CSV_COLUMN_PARENT: ${CSV_COLUMN_PARENT:-Parent}
+      PORT: 3001
+      DRY_RUN: ${DRY_RUN:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:
